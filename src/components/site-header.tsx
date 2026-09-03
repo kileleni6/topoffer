@@ -5,11 +5,11 @@ import { SitePreferences, useLanguage } from "./site-preferences";
 export type DealPeriod = "today" | "yesterday" | "week" | "month" | "all";
 
 const periodLabels: { id: DealPeriod; label: string }[] = [
+  { id: "all", label: "All-time" },
   { id: "today", label: "Today" },
   { id: "yesterday", label: "Yesterday" },
   { id: "week", label: "This week" },
   { id: "month", label: "This month" },
-  { id: "all", label: "All-time" },
 ];
 
 export function SiteHeader({

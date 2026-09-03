@@ -216,7 +216,8 @@ export async function fetchOffers(): Promise<Offer[]> {
     .from("offers")
     .select("*")
     .order("vote_count", { ascending: false })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(500);
   if (error) throw error;
   return (data ?? []) as Offer[];
 }
@@ -325,6 +326,8 @@ export async function removeTarget(offerId: string, ownerKey: string) {
 }
 
 export async function registerClick(offer: Offer) {
+  // Opt-in because every tracked click otherwise invokes the function and writes to the database.
+  if (import.meta.env["VITE_ENABLE_CLICK_TRACKING"] !== "true") return;
   try {
     await secureAction({ action: "register_click", offerId: offer.id, visitorKey: readVisitorKey() });
   } catch (error) {

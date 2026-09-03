@@ -25,6 +25,8 @@ npm run dev
 
 ## Security deployment
 
+See [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) for the complete server-side setup and recommended low-cost configuration.
+
 Public writes are handled by `supabase/functions/secure-action`. Apply the migrations, deploy that function, and configure `ALLOWED_ORIGINS`. To require CAPTCHA on submissions, configure both `VITE_TURNSTILE_SITE_KEY` in the web app and `TURNSTILE_SECRET_KEY` as an Edge Function secret. Never expose the secret as a `VITE_` variable.
 
 ```sh

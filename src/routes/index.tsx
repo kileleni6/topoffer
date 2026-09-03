@@ -66,6 +66,11 @@ export const Route = createFileRoute("/")({
 const PAGE_SIZE = 100;
 /** Separator lines are drawn before these ranks. */
 const TIER_MARKS = [11, 21, 31, 41, 51];
+const HOME_CATEGORY_IDS = [
+  "all", "leaderboards-attention", "seo-ai-visibility", "marketing-advertising",
+  "productivity-personal-tools", "ai-agents-infrastructure", "other",
+  "crypto-web3-investing", "developer-tools", "health-fitness-wellness",
+];
 
 const emptyForm = {
   title: "",
@@ -106,7 +111,7 @@ function isInPeriod(createdAt: string, period: DealPeriod, now = new Date()) {
 }
 
 function Home() {
-  const { category, period = "today" } = Route.useSearch();
+  const { category, period = "all" } = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
   const visitorKey = useVisitorKey();
   const queryClient = useQueryClient();
@@ -127,6 +132,13 @@ function Home() {
   const { saved } = useSavedCategories();
 
   const boardCategories = useMemo(() => allCategories(offers), [offers]);
+  const homeCategories = useMemo(
+    () => HOME_CATEGORY_IDS.flatMap((id) => {
+      const match = boardCategories.find((item) => item.id === id);
+      return match ? [match] : [];
+    }),
+    [boardCategories],
+  );
   const active =
     category && boardCategories.some((c) => c.id === category) ? category : "all";
   const setActive = (id: string) => {
@@ -334,7 +346,7 @@ function Home() {
           className="mb-10 flex items-center gap-1 overflow-x-auto rounded-full bg-secondary/70 p-1.5 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Deal categories"
         >
-          {boardCategories.map((c) => (
+          {homeCategories.map((c) => (
             <button
               key={c.id}
               type="button"
@@ -353,7 +365,7 @@ function Home() {
             to="/categories"
             className="ml-auto flex shrink-0 items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-card"
           >
-            Explore <ChevronRight className="h-3.5 w-3.5" />
+            More <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </nav>
 

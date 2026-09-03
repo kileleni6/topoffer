@@ -18,7 +18,10 @@ export function useVisitorKey() {
 }
 
 export function useOffers() {
-  return useQuery({ queryKey: ["offers"], queryFn: fetchOffers, staleTime: 10_000 });
+  return useQuery({
+    queryKey: ["offers"], queryFn: fetchOffers, staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000, refetchOnWindowFocus: false,
+  });
 }
 
 export function useMyVotes(voterKey: string) {
@@ -26,6 +29,8 @@ export function useMyVotes(voterKey: string) {
     queryKey: ["votes", voterKey],
     queryFn: () => fetchMyVotes(voterKey),
     enabled: voterKey !== "",
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -34,6 +39,8 @@ export function useMyTargets(ownerKey: string) {
     queryKey: ["targets", ownerKey],
     queryFn: () => fetchMyTargets(ownerKey),
     enabled: ownerKey !== "",
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 
