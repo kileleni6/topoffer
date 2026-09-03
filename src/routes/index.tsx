@@ -30,13 +30,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TOPOFFER — the community-ranked deals board" },
+      { title: "Bid Buddy — the community-ranked deals board" },
       {
         name: "description",
         content:
           "Post offers, deals and coupon codes in any niche. Votes decide the ranking, so the best discount holds #1.",
       },
-      { property: "og:title", content: "TOPOFFER — the community-ranked deals board" },
+      { property: "og:title", content: "Bid Buddy — the community-ranked deals board" },
       {
         property: "og:description",
         content: "Post deals and coupon codes. Votes decide the ranking — the best offer holds #1.",
@@ -221,6 +221,33 @@ function Home() {
       <SiteHeader scope="board" />
 
       <main className="mx-auto w-full max-w-6xl px-5">
+        <nav
+          className="mb-10 flex items-center gap-1 overflow-x-auto rounded-full bg-secondary/70 p-1.5 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Deal categories"
+        >
+          {boardCategories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setActive(c.id)}
+              aria-current={active === c.id ? "page" : undefined}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                active === c.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-card hover:text-foreground"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+          <Link
+            to="/categories"
+            className="ml-auto flex shrink-0 items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-card"
+          >
+            Explore <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </nav>
+
         <div className="flex justify-center">
           <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-card">
             <span className="h-1.5 w-1.5 rounded-full bg-live live-dot" />
@@ -360,28 +387,6 @@ function Home() {
               Post this deal
             </button>
           )}
-        </div>
-
-        <div className="mt-10 flex flex-wrap items-center gap-2">
-          {boardCategories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setActive(c.id)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                active === c.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-accent"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-          <Link
-            to="/categories"
-            className="ml-auto flex items-center gap-1 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold shadow-card transition-colors hover:bg-secondary"
-          >
-            Explore <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
         </div>
 
         {error ? (

@@ -5,13 +5,13 @@ import { DAILY_VOTE_CREDITS } from "@/lib/offers";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "How TOPOFFER works — votes decide the deal board" },
+      { title: "How Bid Buddy works — votes decide the deal board" },
       {
         name: "description",
         content:
           "Post an offer, deal or coupon code. Votes decide the ranking, expiry dates clear the board, no paid placement.",
       },
-      { property: "og:title", content: "How TOPOFFER works" },
+      { property: "og:title", content: "How Bid Buddy works" },
       {
         property: "og:description",
         content: "Post a deal, collect votes, hold the podium. No bidding, no paid placement.",
@@ -47,7 +47,7 @@ function About() {
       <main className="mx-auto w-full max-w-3xl px-5">
         <h1 className="text-4xl font-bold tracking-tight">Votes, not bids</h1>
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-          TOPOFFER is a board for offers, deals and coupon codes. Nobody can pay for placement —
+          Bid Buddy is a board for offers, deals and coupon codes. Nobody can pay for placement —
           the community decides which discount deserves the top spot. No account needed either: your
           browser holds an anonymous key that owns your posts, votes and goals.
         </p>
