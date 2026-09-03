@@ -243,11 +243,25 @@ export async function fetchMyTargets(ownerKey: string): Promise<RankTarget[]> {
 }
 
 export async function toggleVote(offerId: string, voterKey: string): Promise<"added" | "removed"> {
-  return secureAction<"added" | "removed">({
-    action: "toggle_vote",
-    offerId,
-    visitorKey: voterKey,
-  });
+  try {
+    return await secureAction<"added" | "removed">({
+      action: "toggle_vote",
+      offerId,
+      visitorKey: voterKey,
+    });
+  } catch (error) {
+    if (!import.meta.env.DEV) throw error;
+    const existing = await supabase.from("votes").select("id").eq("offer_id", offerId).eq("voter_key", voterKey).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data) {
+      const result = await supabase.from("votes").delete().eq("id", existing.data.id);
+      if (result.error) throw result.error;
+      return "removed";
+    }
+    const result = await supabase.from("votes").insert({ offer_id: offerId, voter_key: voterKey });
+    if (result.error) throw result.error;
+    return "added";
+  }
 }
 
 export type NewOffer = {
@@ -267,37 +281,57 @@ export async function submitOffer(
   ownerKey: string,
   captchaToken?: string,
 ): Promise<Offer> {
-  return secureAction<Offer>({
-    action: "submit_offer",
-    visitorKey: ownerKey,
-    captchaToken,
-    offer: {
-      ...offer,
-      tint: tintFor(offer.merchant + offer.title),
-      initials: initialsFor(offer.merchant || offer.title),
-    },
-  });
+  const decorated = {
+    ...offer,
+    tint: tintFor(offer.merchant + offer.title),
+    initials: initialsFor(offer.merchant || offer.title),
+  };
+  try {
+    return await secureAction<Offer>({
+      action: "submit_offer",
+      visitorKey: ownerKey,
+      captchaToken,
+      offer: decorated,
+    });
+  } catch (error) {
+    if (!import.meta.env.DEV) throw error;
+    const result = await supabase.from("offers").insert({ ...decorated, owner_key: ownerKey }).select("*").single();
+    if (result.error) throw result.error;
+    return result.data as Offer;
+  }
 }
 
 export async function saveTarget(offerId: string, ownerKey: string, targetRank: number) {
-  await secureAction({
-    action: "save_target",
-    offerId,
-    visitorKey: ownerKey,
-    targetRank,
-  });
+  try {
+    await secureAction({ action: "save_target", offerId, visitorKey: ownerKey, targetRank });
+  } catch (error) {
+    if (!import.meta.env.DEV) throw error;
+    const result = await supabase.from("rank_targets").upsert(
+      { offer_id: offerId, owner_key: ownerKey, target_rank: targetRank },
+      { onConflict: "offer_id,owner_key" },
+    );
+    if (result.error) throw result.error;
+  }
 }
 
 export async function removeTarget(offerId: string, ownerKey: string) {
-  await secureAction({ action: "remove_target", offerId, visitorKey: ownerKey });
+  try {
+    await secureAction({ action: "remove_target", offerId, visitorKey: ownerKey });
+  } catch (error) {
+    if (!import.meta.env.DEV) throw error;
+    const result = await supabase.from("rank_targets").delete().eq("offer_id", offerId).eq("owner_key", ownerKey);
+    if (result.error) throw result.error;
+  }
 }
 
 export async function registerClick(offer: Offer) {
-  await secureAction({
-    action: "register_click",
-    offerId: offer.id,
-    visitorKey: readVisitorKey(),
-  });
+  try {
+    await secureAction({ action: "register_click", offerId: offer.id, visitorKey: readVisitorKey() });
+  } catch (error) {
+    if (!import.meta.env.DEV) throw error;
+    const result = await supabase.from("offers").update({ clicks: offer.clicks + 1 }).eq("id", offer.id);
+    if (result.error) throw result.error;
+  }
 }
 
 async function secureAction<T = unknown>(body: Record<string, unknown>): Promise<T> {
