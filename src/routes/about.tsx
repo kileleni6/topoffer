@@ -44,7 +44,7 @@ function About() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl px-5">
+      <main id="main-content" className="mx-auto w-full max-w-3xl px-5">
         <h1 className="text-4xl font-bold tracking-tight">Votes, not bids</h1>
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
           TOPOFFER is a board for offers, deals and coupon codes. Nobody can pay for placement —

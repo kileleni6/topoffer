@@ -1,4 +1,5 @@
 import { ArrowUpRight, ChevronUp, Tag, Clock } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Tile } from "./brand";
 import {
@@ -72,7 +73,13 @@ export function OfferRow({
             {categoryLabel(offer.category)}
           </span>
           <span aria-hidden="true">·</span>
-          <span>{offer.merchant}</span>
+          <Link
+            to="/merchant/$merchant"
+            params={{ merchant: offer.merchant }}
+            className="relative z-10 font-medium hover:text-foreground hover:underline"
+          >
+            {offer.merchant}
+          </Link>
           <span aria-hidden="true">·</span>
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3" />

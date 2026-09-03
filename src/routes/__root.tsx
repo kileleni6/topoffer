@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { ConsentBanner } from "@/components/consent-banner";
 
 function NotFoundComponent() {
   return (
@@ -89,7 +90,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Post offers, deals and coupon codes. Votes decide which discount holds #1.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/topoffer-social-card.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/topoffer-social-card.png" },
+      {
+        "script:ld+json": {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "TOPOFFER",
+          description: "Community-ranked offers, deals and coupon codes.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "/?q={search_term_string}&period=all",
+            "query-input": "required name=search_term_string",
+          },
+        },
+      },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -102,6 +120,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/topoffer-mark.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/topoffer-mark.png" },
     ],
@@ -119,6 +138,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:translate-y-0">Skip to content</a>
         {children}
         <Scripts />
       </body>
@@ -134,6 +154,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="top-center" />
+      <ConsentBanner />
     </QueryClientProvider>
   );
 }

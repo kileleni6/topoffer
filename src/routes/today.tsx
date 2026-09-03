@@ -73,7 +73,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen">
       <SiteHeader scope="dashboard" />
-      <main className="mx-auto w-full max-w-5xl px-5">
+      <main id="main-content" className="mx-auto w-full max-w-5xl px-5">
         <h1 className="text-4xl font-bold tracking-tight">My dashboard</h1>
         <p className="mt-3 max-w-xl text-sm text-muted-foreground">
           No account needed — this device is your identity. Everything you post or vote on is tied

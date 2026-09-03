@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -9,12 +9,16 @@ import {
   Globe,
   CalendarClock,
   Plus,
+  Search,
+  Star,
   X,
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import type { DealPeriod } from "@/components/site-header";
 import { OfferRow } from "@/components/offer-row";
 import { Tile } from "@/components/brand";
+import { Turnstile } from "@/components/turnstile";
+import { useSavedCategories } from "@/hooks/use-saved-categories";
 import { useMyVotes, useOffers, useToggleVote, useVisitorKey } from "@/hooks/use-offer-data";
 import {
   allCategories,
@@ -115,6 +119,12 @@ function Home() {
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"rank" | "newest" | "ending">("rank");
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+  const { saved } = useSavedCategories();
 
   const boardCategories = useMemo(() => allCategories(offers), [offers]);
   const active =
@@ -134,8 +144,29 @@ function Home() {
   const board = useMemo(() => {
     const live = offers.filter((o) => isLive(o) && isInPeriod(o.created_at, period));
     const scoped = active === "all" ? live : live.filter((o) => o.category === active);
-    return rankOffers(scoped);
-  }, [offers, active, period]);
+    const searched = scoped.filter((offer) => {
+      if (savedOnly && !saved.includes(offer.category)) return false;
+      if (!deferredQuery) return true;
+      return [offer.title, offer.merchant, offer.description, offer.coupon_code ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(deferredQuery);
+    });
+    const ranked = rankOffers(searched);
+    if (sort === "newest") {
+      return [...ranked].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+    }
+    if (sort === "ending") {
+      return [...ranked].sort((a, b) => {
+        if (!a.expires_at) return 1;
+        if (!b.expires_at) return -1;
+        return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+      });
+    }
+    return ranked;
+  }, [offers, active, period, deferredQuery, savedOnly, saved, sort]);
 
   const pageCount = Math.max(1, Math.ceil(board.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -235,9 +266,10 @@ function Home() {
     };
     setSaving(true);
     try {
-      await submitOffer(payload, visitorKey);
+      await submitOffer(payload, visitorKey, captchaToken);
       await queryClient.invalidateQueries({ queryKey: ["offers"] });
       setForm(emptyForm);
+      setCaptchaToken("");
       setFormOpen(false);
       setActive(chosenCategory);
       toast.success("Deal published", {
@@ -254,7 +286,50 @@ function Home() {
     <div className="min-h-screen">
       <SiteHeader scope="board" period={period} onPeriodChange={setPeriod} />
 
-      <main className="mx-auto w-full max-w-6xl px-5">
+      <main id="main-content" className="mx-auto w-full max-w-6xl px-5">
+        <section className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]" aria-label="Search and filters">
+          <label className="flex h-11 items-center gap-3 rounded-full border border-border bg-card px-4 shadow-card focus-within:ring-2 focus-within:ring-ring/40">
+            <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <span className="sr-only">Search deals, coupon codes, or merchants</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search deals, codes, or merchants"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
+          </label>
+          <select
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value as typeof sort);
+              setPage(1);
+            }}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-card outline-none"
+            aria-label="Sort deals"
+          >
+            <option value="rank">Top ranked</option>
+            <option value="newest">Newest</option>
+            <option value="ending">Ending soon</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              setSavedOnly((value) => !value);
+              setPage(1);
+            }}
+            aria-pressed={savedOnly}
+            className={`flex h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold shadow-card ${
+              savedOnly ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
+            }`}
+          >
+            <Star className={`h-4 w-4 ${savedOnly ? "fill-current" : ""}`} /> Saved
+          </button>
+        </section>
+
         <nav
           className="mb-10 flex items-center gap-1 overflow-x-auto rounded-full bg-secondary/70 p-1.5 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Deal categories"
@@ -392,8 +467,11 @@ function Home() {
                 </label>
               </div>
               <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
+                <Turnstile onToken={setCaptchaToken} />
+              </div>
+              <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
                 <button
-                  disabled={saving}
+                  disabled={saving || (!!import.meta.env["VITE_TURNSTILE_SITE_KEY"] && !captchaToken)}
                   className="h-13 flex-1 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-60"
                 >
                   {saving ? "Publishing…" : "Publish deal"}

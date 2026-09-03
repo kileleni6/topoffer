@@ -4,6 +4,33 @@ export type Category = { id: string; label: string };
 
 export const categories: Category[] = [
   { id: "all", label: "All" },
+  { id: "ai-agents-infrastructure", label: "AI Agents & Infrastructure" },
+  { id: "seo-ai-visibility", label: "SEO & AI Visibility" },
+  { id: "marketing-advertising", label: "Marketing & Advertising" },
+  { id: "crypto-web3-investing", label: "Crypto, Web3 & Investing" },
+  { id: "developer-tools", label: "Developer Tools" },
+  { id: "business-finance-legal", label: "Business, Finance & Legal" },
+  { id: "security-privacy-compliance", label: "Security, Privacy & Compliance" },
+  { id: "health-fitness-wellness", label: "Health, Fitness & Wellness" },
+  { id: "social-creator-tools", label: "Social Media & Creator Tools" },
+  { id: "leaderboards-attention", label: "Leaderboards & Attention Markets" },
+  { id: "hiring-jobs-careers", label: "Hiring, Jobs & Careers" },
+  { id: "education-learning", label: "Education & Learning" },
+  { id: "agencies-studios-services", label: "Agencies, Studios & Services" },
+  { id: "ecommerce-retail", label: "Ecommerce & Retail" },
+  { id: "domains-web-assets", label: "Domains & Web Assets" },
+  { id: "games-entertainment", label: "Games & Entertainment" },
+  { id: "people-profiles", label: "People & Profiles" },
+  { id: "productivity-personal-tools", label: "Productivity & Personal Tools" },
+  { id: "design-creative", label: "Design & Creative" },
+  { id: "writing-content", label: "Writing & Content" },
+  { id: "directories-launch-discovery", label: "Directories, Launch & Discovery" },
+  { id: "ai-media-generation", label: "AI Media Generation" },
+  { id: "audio-voice-podcasting", label: "Audio, Voice & Podcasting" },
+  { id: "sales-lead-generation", label: "Sales & Lead Generation" },
+  { id: "travel-local-lifestyle", label: "Travel, Local & Lifestyle" },
+  { id: "real-estate-property", label: "Real Estate & Property" },
+  { id: "media-news", label: "Media & News" },
   { id: "software", label: "Software" },
   { id: "ai-tools", label: "AI tools" },
   { id: "saas", label: "SaaS" },
@@ -216,24 +243,11 @@ export async function fetchMyTargets(ownerKey: string): Promise<RankTarget[]> {
 }
 
 export async function toggleVote(offerId: string, voterKey: string): Promise<"added" | "removed"> {
-  const { data: existing, error: readError } = await supabase
-    .from("votes")
-    .select("id")
-    .eq("offer_id", offerId)
-    .eq("voter_key", voterKey)
-    .maybeSingle();
-  if (readError) throw readError;
-
-  if (existing) {
-    const { error } = await supabase.from("votes").delete().eq("id", existing.id);
-    if (error) throw error;
-    return "removed";
-  }
-  const { error } = await supabase
-    .from("votes")
-    .insert({ offer_id: offerId, voter_key: voterKey });
-  if (error) throw error;
-  return "added";
+  return secureAction<"added" | "removed">({
+    action: "toggle_vote",
+    offerId,
+    visitorKey: voterKey,
+  });
 }
 
 export type NewOffer = {
@@ -248,43 +262,47 @@ export type NewOffer = {
   expires_at: string | null;
 };
 
-export async function submitOffer(offer: NewOffer, ownerKey: string): Promise<Offer> {
-  const { data, error } = await supabase
-    .from("offers")
-    .insert({
+export async function submitOffer(
+  offer: NewOffer,
+  ownerKey: string,
+  captchaToken?: string,
+): Promise<Offer> {
+  return secureAction<Offer>({
+    action: "submit_offer",
+    visitorKey: ownerKey,
+    captchaToken,
+    offer: {
       ...offer,
-      owner_key: ownerKey,
       tint: tintFor(offer.merchant + offer.title),
       initials: initialsFor(offer.merchant || offer.title),
-    })
-    .select("*")
-    .single();
-  if (error) throw error;
-  return data as Offer;
+    },
+  });
 }
 
 export async function saveTarget(offerId: string, ownerKey: string, targetRank: number) {
-  const { error } = await supabase
-    .from("rank_targets")
-    .upsert({ offer_id: offerId, owner_key: ownerKey, target_rank: targetRank }, {
-      onConflict: "offer_id,owner_key",
-    });
-  if (error) throw error;
+  await secureAction({
+    action: "save_target",
+    offerId,
+    visitorKey: ownerKey,
+    targetRank,
+  });
 }
 
 export async function removeTarget(offerId: string, ownerKey: string) {
-  const { error } = await supabase
-    .from("rank_targets")
-    .delete()
-    .eq("offer_id", offerId)
-    .eq("owner_key", ownerKey);
-  if (error) throw error;
+  await secureAction({ action: "remove_target", offerId, visitorKey: ownerKey });
 }
 
 export async function registerClick(offer: Offer) {
-  const { error } = await supabase
-    .from("offers")
-    .update({ clicks: offer.clicks + 1 })
-    .eq("id", offer.id);
+  await secureAction({
+    action: "register_click",
+    offerId: offer.id,
+    visitorKey: readVisitorKey(),
+  });
+}
+
+async function secureAction<T = unknown>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke("secure-action", { body });
   if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return data?.data as T;
 }

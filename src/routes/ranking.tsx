@@ -84,7 +84,7 @@ function Ranking() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-4xl px-5">
+      <main id="main-content" className="mx-auto w-full max-w-4xl px-5">
         <h1 className="text-4xl font-bold tracking-tight">Rank goals</h1>
         <p className="mt-3 max-w-xl text-sm text-muted-foreground">
           Choose where you want each of your deals to land. We do the arithmetic against whoever is

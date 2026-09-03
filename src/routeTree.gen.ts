@@ -17,6 +17,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TodayRouteImport } from './routes/today'
+import { Route as MerchantMerchantRouteImport } from './routes/merchant.$merchant'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const TodayRoute = TodayRouteImport.update({
   path: '/today',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantMerchantRoute = MerchantMerchantRouteImport.update({
+  id: '/merchant/$merchant',
+  path: '/merchant/$merchant',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/ranking': typeof RankingRoute
   '/terms': typeof TermsRoute
   '/today': typeof TodayRoute
+  '/merchant/$merchant': typeof MerchantMerchantRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/ranking': typeof RankingRoute
   '/terms': typeof TermsRoute
   '/today': typeof TodayRoute
+  '/merchant/$merchant': typeof MerchantMerchantRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/ranking': typeof RankingRoute
   '/terms': typeof TermsRoute
   '/today': typeof TodayRoute
+  '/merchant/$merchant': typeof MerchantMerchantRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/ranking'
     | '/terms'
     | '/today'
+    | '/merchant/$merchant'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/ranking'
     | '/terms'
     | '/today'
+    | '/merchant/$merchant'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/ranking'
     | '/terms'
     | '/today'
+    | '/merchant/$merchant'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   RankingRoute: typeof RankingRoute
   TermsRoute: typeof TermsRoute
   TodayRoute: typeof TodayRoute
+  MerchantMerchantRoute: typeof MerchantMerchantRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/$merchant': {
+      id: '/merchant/$merchant'
+      path: '/merchant/$merchant'
+      fullPath: '/merchant/$merchant'
+      preLoaderRoute: typeof MerchantMerchantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   RankingRoute: RankingRoute,
   TermsRoute: TermsRoute,
   TodayRoute: TodayRoute,
+  MerchantMerchantRoute: MerchantMerchantRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
