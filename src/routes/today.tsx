@@ -19,13 +19,13 @@ import {
 export const Route = createFileRoute("/today")({
   head: () => ({
     meta: [
-      { title: "My dashboard — Bid Buddy" },
+      { title: "My dashboard — TOPOFFER" },
       {
         name: "description",
         content:
           "Track the deals you posted, the votes you've cast, your daily vote credits and your upcoming offers.",
       },
-      { property: "og:title", content: "My dashboard — Bid Buddy" },
+      { property: "og:title", content: "My dashboard — TOPOFFER" },
       {
         property: "og:description",
         content: "Your posted deals, vote history, daily vote credits and upcoming offers.",

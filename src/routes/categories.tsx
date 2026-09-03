@@ -7,13 +7,13 @@ import { categories, isLive, rankOffers } from "@/lib/offers";
 export const Route = createFileRoute("/categories")({
   head: () => ({
     meta: [
-      { title: "Deal categories — Bid Buddy" },
+      { title: "Deal categories — TOPOFFER" },
       {
         name: "description",
         content:
           "Browse every deal board: software, marketing, finance, retail, travel, health, gaming and business offers.",
       },
-      { property: "og:title", content: "Deal categories — Bid Buddy" },
+      { property: "og:title", content: "Deal categories — TOPOFFER" },
       {
         property: "og:description",
         content: "Software, marketing, finance, retail, travel, health, gaming and business deals.",

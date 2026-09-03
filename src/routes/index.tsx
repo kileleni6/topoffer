@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
+import type { DealPeriod } from "@/components/site-header";
 import { OfferRow } from "@/components/offer-row";
 import { Tile } from "@/components/brand";
 import { useMyVotes, useOffers, useToggleVote, useVisitorKey } from "@/hooks/use-offer-data";
@@ -30,13 +31,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bid Buddy — the community-ranked deals board" },
+      { title: "TOPOFFER — the community-ranked deals board" },
       {
         name: "description",
         content:
           "Post offers, deals and coupon codes in any niche. Votes decide the ranking, so the best discount holds #1.",
       },
-      { property: "og:title", content: "Bid Buddy — the community-ranked deals board" },
+      { property: "og:title", content: "TOPOFFER — the community-ranked deals board" },
       {
         property: "og:description",
         content: "Post deals and coupon codes. Votes decide the ranking — the best offer holds #1.",
@@ -45,14 +46,20 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { category?: string | undefined } => ({
+  validateSearch: (search: Record<string, unknown>): {
+    category?: string | undefined;
+    period?: DealPeriod | undefined;
+  } => ({
     category: typeof search["category"] === "string" ? (search["category"] as string) : undefined,
+    period: ["today", "yesterday", "week", "month", "all"].includes(String(search["period"]))
+      ? (search["period"] as DealPeriod)
+      : undefined,
   }),
   component: Home,
 });
 
 /** Deals shown per page; a new page starts once the board passes this many deals. */
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100;
 /** Separator lines are drawn before these ranks. */
 const TIER_MARKS = [11, 21, 31, 41, 51];
 
@@ -72,8 +79,30 @@ const emptyForm = {
 const inputClass =
   "h-13 rounded-full border border-border bg-card px-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/40";
 
+function isInPeriod(createdAt: string, period: DealPeriod, now = new Date()) {
+  if (period === "all") return true;
+  const created = new Date(createdAt);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (period === "today") return created >= startOfToday;
+  if (period === "yesterday") {
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    return created >= startOfYesterday && created < startOfToday;
+  }
+  if (period === "week") {
+    const startOfWeek = new Date(startOfToday);
+    const daysSinceMonday = (startOfToday.getDay() + 6) % 7;
+    startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
+    return created >= startOfWeek;
+  }
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  return created >= startOfMonth;
+}
+
 function Home() {
-  const { category } = Route.useSearch();
+  const { category, period = "today" } = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
   const visitorKey = useVisitorKey();
   const queryClient = useQueryClient();
@@ -92,16 +121,21 @@ function Home() {
     category && boardCategories.some((c) => c.id === category) ? category : "all";
   const setActive = (id: string) => {
     setPage(1);
-    navigate({ search: { category: id }, resetScroll: false });
+    navigate({ search: { category: id, period }, resetScroll: false });
+  };
+
+  const setPeriod = (nextPeriod: DealPeriod) => {
+    setPage(1);
+    navigate({ search: { category: active, period: nextPeriod }, resetScroll: false });
   };
 
   const votedIds = useMemo(() => new Set(myVotes.map((v) => v.offer_id)), [myVotes]);
 
   const board = useMemo(() => {
-    const live = offers.filter((o) => isLive(o));
+    const live = offers.filter((o) => isLive(o) && isInPeriod(o.created_at, period));
     const scoped = active === "all" ? live : live.filter((o) => o.category === active);
     return rankOffers(scoped);
-  }, [offers, active]);
+  }, [offers, active, period]);
 
   const pageCount = Math.max(1, Math.ceil(board.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -218,7 +252,7 @@ function Home() {
 
   return (
     <div className="min-h-screen">
-      <SiteHeader scope="board" />
+      <SiteHeader scope="board" period={period} onPeriodChange={setPeriod} />
 
       <main className="mx-auto w-full max-w-6xl px-5">
         <nav

@@ -4,14 +4,14 @@ export function Logo() {
   return (
     <Link to="/" search={{ category: "all" }} className="flex items-center gap-2.5">
       <img
-        src="/bid-buddy-mark.png"
+        src="/topoffer-mark.png"
         alt=""
         className="h-9 w-9 object-contain"
         width="36"
         height="36"
       />
       <span className="text-xl font-bold tracking-tight">
-        BID <span className="text-primary">BUDDY</span>
+        TOP<span className="text-primary">OFFER</span>
       </span>
     </Link>
   );

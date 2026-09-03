@@ -78,12 +78,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Bid Buddy — community-ranked offers, deals and coupons" },
+      { title: "TOPOFFER — community-ranked offers, deals and coupons" },
       {
         name: "description",
         content: "Post offers, deals and coupon codes. Votes decide which discount holds #1.",
       },
-      { property: "og:title", content: "Bid Buddy — community-ranked offers and deals" },
+      { property: "og:title", content: "TOPOFFER — community-ranked offers and deals" },
       {
         property: "og:description",
         content: "Post offers, deals and coupon codes. Votes decide which discount holds #1.",
@@ -102,8 +102,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/bid-buddy-mark.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/bid-buddy-mark.png" },
+      { rel: "icon", href: "/topoffer-mark.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/topoffer-mark.png" },
     ],
   }),
   shellComponent: RootShell,
