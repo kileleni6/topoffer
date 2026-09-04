@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { secureAction } from "./offers.functions";
 
 export type Category = { id: string; label: string };
 
@@ -94,7 +95,6 @@ export function allCategories(offers: { category: string }[]): Category[] {
   return [...categories, ...extra];
 }
 
-
 export type Offer = {
   id: string;
   title: string;
@@ -170,8 +170,7 @@ export function initialsFor(value: string) {
 export const isLive = (o: Offer, now = Date.now()) =>
   new Date(o.starts_at).getTime() <= now && !isExpired(o, now);
 
-export const isUpcoming = (o: Offer, now = Date.now()) =>
-  new Date(o.starts_at).getTime() > now;
+export const isUpcoming = (o: Offer, now = Date.now()) => new Date(o.starts_at).getTime() > now;
 
 export const isExpired = (o: Offer, now = Date.now()) =>
   o.expires_at != null && new Date(o.expires_at).getTime() < now;
@@ -211,13 +210,16 @@ export const dayStart = (iso: string) => new Date(iso).toISOString().slice(0, 10
 
 // ——— data access ———
 
+export const MAX_PUBLIC_OFFERS = 500;
+export const CLICK_TRACKING_ENABLED = import.meta.env["VITE_ENABLE_CLICK_TRACKING"] === "true";
+
 export async function fetchOffers(): Promise<Offer[]> {
   const { data, error } = await supabase
     .from("offers")
     .select("*")
     .order("vote_count", { ascending: false })
     .order("created_at", { ascending: true })
-    .limit(500);
+    .limit(MAX_PUBLIC_OFFERS);
   if (error) throw error;
   return (data ?? []) as Offer[];
 }
@@ -235,34 +237,14 @@ export async function fetchMyVotes(voterKey: string): Promise<Vote[]> {
 
 export async function fetchMyTargets(ownerKey: string): Promise<RankTarget[]> {
   if (!ownerKey) return [];
-  const { data, error } = await supabase
-    .from("rank_targets")
-    .select("*")
-    .eq("owner_key", ownerKey);
+  const { data, error } = await supabase.from("rank_targets").select("*").eq("owner_key", ownerKey);
   if (error) throw error;
   return (data ?? []) as RankTarget[];
 }
 
 export async function toggleVote(offerId: string, voterKey: string): Promise<"added" | "removed"> {
-  try {
-    return await secureAction<"added" | "removed">({
-      action: "toggle_vote",
-      offerId,
-      visitorKey: voterKey,
-    });
-  } catch (error) {
-    if (!import.meta.env.DEV) throw error;
-    const existing = await supabase.from("votes").select("id").eq("offer_id", offerId).eq("voter_key", voterKey).maybeSingle();
-    if (existing.error) throw existing.error;
-    if (existing.data) {
-      const result = await supabase.from("votes").delete().eq("id", existing.data.id);
-      if (result.error) throw result.error;
-      return "removed";
-    }
-    const result = await supabase.from("votes").insert({ offer_id: offerId, voter_key: voterKey });
-    if (result.error) throw result.error;
-    return "added";
-  }
+  const result = await secureAction({ data: { action: "vote", visitorKey: voterKey, offerId } });
+  return result.result;
 }
 
 export type NewOffer = {
@@ -287,59 +269,24 @@ export async function submitOffer(
     tint: tintFor(offer.merchant + offer.title),
     initials: initialsFor(offer.merchant || offer.title),
   };
-  try {
-    return await secureAction<Offer>({
-      action: "submit_offer",
-      visitorKey: ownerKey,
-      captchaToken,
-      offer: decorated,
-    });
-  } catch (error) {
-    if (!import.meta.env.DEV) throw error;
-    const result = await supabase.from("offers").insert({ ...decorated, owner_key: ownerKey }).select("*").single();
-    if (result.error) throw result.error;
-    return result.data as Offer;
-  }
+  void captchaToken;
+  const result = await secureAction({
+    data: { action: "submit", visitorKey: ownerKey, offer: decorated },
+  });
+  return result.offer as Offer;
 }
 
 export async function saveTarget(offerId: string, ownerKey: string, targetRank: number) {
-  try {
-    await secureAction({ action: "save_target", offerId, visitorKey: ownerKey, targetRank });
-  } catch (error) {
-    if (!import.meta.env.DEV) throw error;
-    const result = await supabase.from("rank_targets").upsert(
-      { offer_id: offerId, owner_key: ownerKey, target_rank: targetRank },
-      { onConflict: "offer_id,owner_key" },
-    );
-    if (result.error) throw result.error;
-  }
+  await secureAction({ data: { action: "target", visitorKey: ownerKey, offerId, targetRank } });
 }
 
 export async function removeTarget(offerId: string, ownerKey: string) {
-  try {
-    await secureAction({ action: "remove_target", offerId, visitorKey: ownerKey });
-  } catch (error) {
-    if (!import.meta.env.DEV) throw error;
-    const result = await supabase.from("rank_targets").delete().eq("offer_id", offerId).eq("owner_key", ownerKey);
-    if (result.error) throw result.error;
-  }
+  await secureAction({
+    data: { action: "target", visitorKey: ownerKey, offerId, targetRank: null },
+  });
 }
 
-export async function registerClick(offer: Offer) {
-  // Opt-in because every tracked click otherwise invokes the function and writes to the database.
-  if (import.meta.env["VITE_ENABLE_CLICK_TRACKING"] !== "true") return;
-  try {
-    await secureAction({ action: "register_click", offerId: offer.id, visitorKey: readVisitorKey() });
-  } catch (error) {
-    if (!import.meta.env.DEV) throw error;
-    const result = await supabase.from("offers").update({ clicks: offer.clicks + 1 }).eq("id", offer.id);
-    if (result.error) throw result.error;
-  }
-}
-
-async function secureAction<T = unknown>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke("secure-action", { body });
-  if (error) throw error;
-  if (data?.error) throw new Error(String(data.error));
-  return data?.data as T;
+export async function registerClick(offer: Offer, visitorKey: string) {
+  if (!CLICK_TRACKING_ENABLED || !visitorKey) return;
+  await secureAction({ data: { action: "click", visitorKey, offerId: offer.id } });
 }

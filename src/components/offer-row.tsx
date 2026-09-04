@@ -1,14 +1,9 @@
 import { ArrowUpRight, ChevronUp, Tag, Clock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useVisitorKey } from "@/hooks/use-offer-data";
 import { Tile } from "./brand";
-import {
-  categoryLabel,
-  registerClick,
-  timeAgo,
-  timeLeft,
-  type RankedOffer,
-} from "@/lib/offers";
+import { categoryLabel, registerClick, timeAgo, timeLeft, type RankedOffer } from "@/lib/offers";
 
 export function OfferRow({
   offer,
@@ -23,6 +18,7 @@ export function OfferRow({
   onVote: (id: string) => void;
   mine?: boolean;
 }) {
+  const visitorKey = useVisitorKey();
   const podium = offer.rank <= 3;
 
   return (
@@ -122,7 +118,7 @@ export function OfferRow({
             target="_blank"
             rel="nofollow noopener"
             onClick={() => {
-              void registerClick(offer).catch(() => undefined);
+              void registerClick(offer, visitorKey).catch(() => undefined);
             }}
             className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
