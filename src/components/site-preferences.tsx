@@ -28,9 +28,14 @@ export function useLanguage() {
     window.localStorage.setItem(LANGUAGE_KEY, next);
     document.documentElement.lang = next;
     document.documentElement.dir = rtlLanguages.has(next) ? "rtl" : "ltr";
+    window.dispatchEvent(new CustomEvent<LanguageCode>("topoffer:language", { detail: next }));
   };
 
-  return { language, setLanguage, labels: headerTranslations[language] ?? headerTranslations["en"]! };
+  return {
+    language,
+    setLanguage,
+    labels: headerTranslations[language] ?? headerTranslations["en"]!,
+  };
 }
 
 export function SitePreferences({
@@ -71,7 +76,9 @@ export function SitePreferences({
           aria-label={labels.language}
         >
           {supportedLanguages.map(([code, name]) => (
-            <option key={code} value={code}>{name}</option>
+            <option key={code} value={code}>
+              {name}
+            </option>
           ))}
         </select>
       </label>

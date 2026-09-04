@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { ConsentBanner } from "@/components/consent-banner";
+import { PageTranslation } from "@/lib/page-translation";
 
 function NotFoundComponent() {
   return (
@@ -138,7 +139,12 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <a href="#main-content" className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:translate-y-0">Skip to content</a>
+        <a
+          href="#main-content"
+          className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:translate-y-0"
+        >
+          Skip to content
+        </a>
         {children}
         <Scripts />
       </body>
@@ -155,6 +161,7 @@ function RootComponent() {
       <Outlet />
       <Toaster position="top-center" />
       <ConsentBanner />
+      <PageTranslation />
     </QueryClientProvider>
   );
 }
