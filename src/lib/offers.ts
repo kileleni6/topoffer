@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { secureAction } from "./offers.functions";
 
 export type Category = { id: string; label: string };
 
@@ -243,8 +242,12 @@ export async function fetchMyTargets(ownerKey: string): Promise<RankTarget[]> {
 }
 
 export async function toggleVote(offerId: string, voterKey: string): Promise<"added" | "removed"> {
-  const result = await secureAction({ data: { action: "vote", visitorKey: voterKey, offerId } });
-  return result.result;
+  const { data, error } = await supabase.rpc("rpc_toggle_vote", {
+    _offer_id: offerId,
+    _visitor_key: voterKey,
+  });
+  if (error) throw new Error(error.message);
+  return data as "added" | "removed";
 }
 
 export type NewOffer = {
@@ -270,23 +273,47 @@ export async function submitOffer(
     initials: initialsFor(offer.merchant || offer.title),
   };
   void captchaToken;
-  const result = await secureAction({
-    data: { action: "submit", visitorKey: ownerKey, offer: decorated },
+  const { data, error } = await supabase.rpc("rpc_submit_offer", {
+    _visitor_key: ownerKey,
+    _title: decorated.title,
+    _merchant: decorated.merchant,
+    _url: decorated.url,
+    _coupon_code: decorated.coupon_code,
+    _discount_label: decorated.discount_label,
+    _description: decorated.description,
+    _category: decorated.category,
+    _starts_at: decorated.starts_at,
+    _expires_at: decorated.expires_at,
+    _tint: decorated.tint,
+    _initials: decorated.initials,
   });
-  return result.offer as Offer;
+  if (error) throw new Error(error.message);
+  return data as Offer;
 }
 
 export async function saveTarget(offerId: string, ownerKey: string, targetRank: number) {
-  await secureAction({ data: { action: "target", visitorKey: ownerKey, offerId, targetRank } });
+  const { error } = await supabase.rpc("rpc_save_rank_target", {
+    _offer_id: offerId,
+    _visitor_key: ownerKey,
+    _target_rank: targetRank,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function removeTarget(offerId: string, ownerKey: string) {
-  await secureAction({
-    data: { action: "target", visitorKey: ownerKey, offerId, targetRank: null },
+  const { error } = await supabase.rpc("rpc_save_rank_target", {
+    _offer_id: offerId,
+    _visitor_key: ownerKey,
+    _target_rank: null,
   });
+  if (error) throw new Error(error.message);
 }
 
 export async function registerClick(offer: Offer, visitorKey: string) {
   if (!CLICK_TRACKING_ENABLED || !visitorKey) return;
-  await secureAction({ data: { action: "click", visitorKey, offerId: offer.id } });
+  const { error } = await supabase.rpc("rpc_register_click", {
+    _offer_id: offer.id,
+    _visitor_key: visitorKey,
+  });
+  if (error) throw new Error(error.message);
 }
