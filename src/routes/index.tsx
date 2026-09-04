@@ -50,7 +50,9 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
     category?: string | undefined;
     period?: DealPeriod | undefined;
   } => ({
@@ -67,9 +69,16 @@ const PAGE_SIZE = 100;
 /** Separator lines are drawn before these ranks. */
 const TIER_MARKS = [11, 21, 31, 41, 51];
 const HOME_CATEGORY_IDS = [
-  "all", "leaderboards-attention", "seo-ai-visibility", "marketing-advertising",
-  "productivity-personal-tools", "ai-agents-infrastructure", "other",
-  "crypto-web3-investing", "developer-tools", "health-fitness-wellness",
+  "all",
+  "leaderboards-attention",
+  "seo-ai-visibility",
+  "marketing-advertising",
+  "productivity-personal-tools",
+  "ai-agents-infrastructure",
+  "other",
+  "crypto-web3-investing",
+  "developer-tools",
+  "health-fitness-wellness",
 ];
 
 const emptyForm = {
@@ -133,14 +142,14 @@ function Home() {
 
   const boardCategories = useMemo(() => allCategories(offers), [offers]);
   const homeCategories = useMemo(
-    () => HOME_CATEGORY_IDS.flatMap((id) => {
-      const match = boardCategories.find((item) => item.id === id);
-      return match ? [match] : [];
-    }),
+    () =>
+      HOME_CATEGORY_IDS.flatMap((id) => {
+        const match = boardCategories.find((item) => item.id === id);
+        return match ? [match] : [];
+      }),
     [boardCategories],
   );
-  const active =
-    category && boardCategories.some((c) => c.id === category) ? category : "all";
+  const active = category && boardCategories.some((c) => c.id === category) ? category : "all";
   const setActive = (id: string) => {
     setPage(1);
     navigate({ search: { category: id, period }, resetScroll: false });
@@ -196,8 +205,13 @@ function Home() {
     [offers],
   );
 
-  const totalVotes = offers.reduce((sum, o) => sum + o.vote_count, 0);
-  const liveCount = offers.filter((o) => isLive(o)).length;
+  const { totalVotes, liveCount } = useMemo(() => {
+    const liveOffers = offers.filter((offer) => isLive(offer));
+    return {
+      liveCount: liveOffers.length,
+      totalVotes: liveOffers.reduce((sum, offer) => sum + offer.vote_count, 0),
+    };
+  }, [offers]);
 
   const onVote = (id: string) => {
     if (!visitorKey) return;
@@ -239,9 +253,7 @@ function Home() {
       return;
     }
     const chosenCategory =
-      form.category === "__custom"
-        ? slugifyCategory(form.customCategory)
-        : form.category;
+      form.category === "__custom" ? slugifyCategory(form.customCategory) : form.category;
     if (!chosenCategory) {
       toast.error(
         form.category === "__custom"
@@ -299,7 +311,10 @@ function Home() {
       <SiteHeader scope="board" period={period} onPeriodChange={setPeriod} />
 
       <main id="main-content" className="mx-auto w-full max-w-6xl px-5">
-        <section className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]" aria-label="Search and filters">
+        <section
+          className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]"
+          aria-label="Search and filters"
+        >
           <label className="flex h-11 items-center gap-3 rounded-full border border-border bg-card px-4 shadow-card focus-within:ring-2 focus-within:ring-ring/40">
             <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <span className="sr-only">Search deals, coupon codes, or merchants</span>
@@ -335,7 +350,9 @@ function Home() {
             }}
             aria-pressed={savedOnly}
             className={`flex h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold shadow-card ${
-              savedOnly ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
+              savedOnly
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card"
             }`}
           >
             <Star className={`h-4 w-4 ${savedOnly ? "fill-current" : ""}`} /> Saved
@@ -483,7 +500,9 @@ function Home() {
               </div>
               <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
                 <button
-                  disabled={saving || (!!import.meta.env["VITE_TURNSTILE_SITE_KEY"] && !captchaToken)}
+                  disabled={
+                    saving || (!!import.meta.env["VITE_TURNSTILE_SITE_KEY"] && !captchaToken)
+                  }
                   className="h-13 flex-1 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-60"
                 >
                   {saving ? "Publishing…" : "Publish deal"}

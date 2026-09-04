@@ -6,6 +6,7 @@ import {
   fetchOffers,
   readVisitorKey,
   toggleVote,
+  type Offer,
 } from "@/lib/offers";
 
 /** Anonymous visitor id from localStorage. Empty string until hydrated. */
@@ -19,8 +20,11 @@ export function useVisitorKey() {
 
 export function useOffers() {
   return useQuery({
-    queryKey: ["offers"], queryFn: fetchOffers, staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000, refetchOnWindowFocus: false,
+    queryKey: ["offers"],
+    queryFn: fetchOffers,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -48,7 +52,17 @@ export function useToggleVote(voterKey: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (offerId: string) => toggleVote(offerId, voterKey),
-    onSuccess: () => {
+    onSuccess: (result, offerId) => {
+      qc.setQueryData<Offer[]>(["offers"], (current) =>
+        current?.map((offer) =>
+          offer.id === offerId
+            ? {
+                ...offer,
+                vote_count: Math.max(0, offer.vote_count + (result === "added" ? 1 : -1)),
+              }
+            : offer,
+        ),
+      );
       void qc.invalidateQueries({ queryKey: ["offers"] });
       void qc.invalidateQueries({ queryKey: ["votes", voterKey] });
     },
